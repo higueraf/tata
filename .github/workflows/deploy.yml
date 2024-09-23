@@ -17,7 +17,7 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'  # Distribución de Java requerida
+          distribution: 'temurin'
           java-version: '21'
 
       - name: Cache Maven dependencies
@@ -38,7 +38,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/tata-devop:${{ github.sha }} .
+          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            REPOSITORY_NAME=tata-devop-dev
+          elif [ "${{ github.ref }}" == "refs/heads/prod" ]; then
+            REPOSITORY_NAME=tata-devop-prod
+          fi
+          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${REPOSITORY_NAME}:${{ github.sha }} .
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
 
@@ -50,7 +55,12 @@ jobs:
 
       - name: Push Docker Image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/tata-devop:${{ github.sha }}
+          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            REPOSITORY_NAME=tata-devop-dev
+          elif [ "${{ github.ref }}" == "refs/heads/prod" ]; then
+            REPOSITORY_NAME=tata-devop-prod
+          fi
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${REPOSITORY_NAME}:${{ github.sha }}
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
 
@@ -61,10 +71,15 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v1
 
-      - name: Deploy to Kubernetes (Dev)
-        if: github.ref == 'refs/heads/dev'
-        run: kubectl apply -f k8s/dev/deployment.yaml --namespace=dev
-
-      - name: Deploy to Kubernetes (Prod)
-        if: github.ref == 'refs/heads/prod'
-        run: kubectl apply -f k8s/prod/deployment.yaml --namespace=prod
+      - name: Deploy to Kubernetes
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            NAMESPACE=dev
+            REPOSITORY_NAME=tata-devop-dev
+          elif [ "${{ github.ref }}" == "refs/heads/prod" ]; then
+            NAMESPACE=prod
+            REPOSITORY_NAME=tata-devop-prod
+          fi
+          ECR_URI=533267371412.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${REPOSITORY_NAME}
+          kubectl set image deployment/${REPOSITORY_NAME} ${REPOSITORY_NAME}=${ECR_URI}:${{ github.sha }} -n ${NAMESPACE}
+          kubectl rollout status deployment/${REPOSITORY_NAME} -n ${NAMESPACE}
