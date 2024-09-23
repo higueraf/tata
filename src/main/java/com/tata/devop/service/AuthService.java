@@ -25,7 +25,6 @@ public class AuthService {
         }
     }
 
-    // Genera el token JWT
     public String generateToken(String username) {
         try {
             Map<String, Object> claims = new HashMap<>();
@@ -61,7 +60,6 @@ public class AuthService {
                 .compact();
     }
 
-    // Valida el token JWT
     public Boolean validateToken(String token) {
         try {
             Claims claims = Jwts.parser()
