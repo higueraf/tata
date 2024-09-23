@@ -2,6 +2,7 @@ package com.tata.devop.filter;
 
 import com.tata.devop.util.JwtUtil;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,14 +20,16 @@ import java.io.IOException;
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
+    @Autowired
+    private Dotenv dotenv;
+
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
-    private final Dotenv dotenv;
+
 
     public JwtRequestFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
-        this.dotenv = Dotenv.load(); // Carga de variables de entorno
     }
 
     @Override
@@ -58,8 +61,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 usernamePasswordAuthenticationToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Establecer el contexto de autenticación
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
             }
         }

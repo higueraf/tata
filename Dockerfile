@@ -1,11 +1,11 @@
-FROM maven:3.8.1-openjdk-21 AS build
+FROM maven:3.9.7-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
-COPY --from=build /app/target/tata-test-0.0.1-SNAPSHOT.jar /app/tata-test.jar
+COPY --from=build /app/target/tata-devop.jar /app/tata-devop.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "tata-test.jar"]
+ENTRYPOINT ["java", "-jar", "tata-devop.jar"]

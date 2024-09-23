@@ -9,8 +9,8 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.tata</groupId>
-	<artifactId>devop</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>tata</artifactId>
+	<version>devop</version>
 	<name>devop</name>
 	<description>Devop project for Spring Boot</description>
 	<url/>

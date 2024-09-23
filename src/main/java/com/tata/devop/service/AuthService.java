@@ -4,6 +4,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -13,11 +14,8 @@ import java.util.Map;
 @Service
 public class AuthService {
 
-    private final Dotenv dotenv;
-
-    public AuthService(Dotenv dotenv) {
-        this.dotenv = dotenv;
-    }
+    @Autowired
+    private Dotenv dotenv;
 
     public String authenticate(String username, String password) {
         if ("testuser".equals(username) && "testpassword".equals(password)) {
@@ -31,7 +29,7 @@ public class AuthService {
     public String generateToken(String username) {
         try {
             Map<String, Object> claims = new HashMap<>();
-            claims.put("roles", "ROLE_USER");  // Aquí puedes añadir más claims si es necesario.
+            claims.put("roles", "ROLE_USER");
             return createToken(claims, username);
         } catch (Exception e) {
             System.err.println("Error generating token: " + e.getMessage());
@@ -41,9 +39,8 @@ public class AuthService {
     private String getSecretKey() {
         return dotenv.get("JWT_SECRET_KEY", "defaultSecretKey");
     }
-    // Crea el token JWT usando la clave secreta y expiración
     private String createToken(Map<String, Object> claims, String subject) {
-        long expirationTime = 1000 * 60 * 60 * 10L;  // 10 horas por defecto
+        long expirationTime = 1000 * 60 * 60 * 10L;
 
         try {
             String expirationString = dotenv.get("JWT_EXPIRATION");

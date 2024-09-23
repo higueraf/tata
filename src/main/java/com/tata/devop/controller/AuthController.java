@@ -22,6 +22,6 @@ public class AuthController {
         String token = authService.authenticate(username, password);
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
-        return ResponseEntity.ok(response);  // Devuelve el token en JSON
+        return ResponseEntity.ok(response);
     }
 }

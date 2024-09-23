@@ -1,6 +1,7 @@
 package com.tata.devop.controller;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,7 +12,8 @@ import java.util.Map;
 @RestController
 public class HealthController {
 
-    private final Dotenv dotenv = Dotenv.load();
+    @Autowired
+    private Dotenv dotenv;
 
     @GetMapping("/health")
     public Map<String, Object> health() {

@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -11,7 +12,8 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final Dotenv dotenv = Dotenv.load();
+    @Autowired
+    private Dotenv dotenv;
 
     public String getSecretKey() {
         String secretKey = dotenv.get("JWT_SECRET_KEY");
