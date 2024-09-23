@@ -1,103 +1,57 @@
-name: CI/CD Tata Devop
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tata-devop-dev
+  namespace: dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tata-devop
+  template:
+    metadata:
+      labels:
+        app: tata-devop
+    spec:
+      containers:
+        - name: tata-devop-dev
+          image: 533267371412.dkr.ecr.us-west-2.amazonaws.com/tata-devop-dev:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tata-devop-secrets-dev
+                  key: JWT_SECRET_KEY
+            - name: JWT_EXPIRATION
+              valueFrom:
+                secretKeyRef:
+                  name: tata-devop-secrets-dev
+                  key: JWT_EXPIRATION
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tata-devop-secrets-dev
+                  key: API_KEY
+            - name: APP_ENVIRONMENT
+              valueFrom:
+                secretKeyRef:
+                  name: tata-devop-secrets-dev
+                  key: APP_ENVIRONMENT
 
-on:
-  push:
-    branches:
-      - dev
-      - prod
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Install dependencies
-        run: mvn install -DskipTests
-
-      - name: Run Tests
-        run: mvn test
-        env:
-          JAVA_HOME: ${{ steps.setup-java.outputs.java-home }}
-
-      - name: Build Docker Image
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
-            REPOSITORY_NAME=tata-devop-dev
-          elif [ "${{ github.ref }}" == "refs/heads/prod" ]; then
-            REPOSITORY_NAME=tata-devop-prod
-          fi
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${REPOSITORY_NAME}:${{ github.sha }} .
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Log in to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-
-      - name: Push Docker Image to ECR
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
-            REPOSITORY_NAME=tata-devop-dev
-          elif [ "${{ github.ref }}" == "refs/heads/prod" ]; then
-            REPOSITORY_NAME=tata-devop-prod
-          fi
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${REPOSITORY_NAME}:${{ github.sha }}
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      # Configurar kubectl para EKS
-      - name: Configure kubectl
-        run: |
-          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-
-      - name: Deploy to Kubernetes
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
-            NAMESPACE=dev
-            REPOSITORY_NAME=tata-devop-dev
-          elif [ "${{ github.ref }}" == "refs/heads/prod" ]; then
-            NAMESPACE=prod
-            REPOSITORY_NAME=tata-devop-prod
-          fi
-          ECR_URI=533267371412.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${REPOSITORY_NAME}
-          kubectl set image deployment/${REPOSITORY_NAME} ${REPOSITORY_NAME}=${ECR_URI}:${{ github.sha }} -n ${NAMESPACE}
-          kubectl rollout status deployment/${REPOSITORY_NAME} -n ${NAMESPACE}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tata-devop-dev-service
+  namespace: dev
+spec:
+  selector:
+    app: tata-devop
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
