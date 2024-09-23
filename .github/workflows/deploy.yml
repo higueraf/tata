@@ -17,6 +17,7 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v2
         with:
+          distribution: 'temurin'  # Distribución de Java requerida
           java-version: '21'
 
       - name: Cache Maven dependencies
